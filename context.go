@@ -64,6 +64,7 @@ func (ctx *Context) searchDir(dir string) error {
 	// search directory for every template in the package
 	pat := path.Join(dir, "*.tmpl")
 	paths, err := filepath.Glob(pat)
+	dirName := path.Base(dir)
 
 	if err != nil {
 		return err
@@ -78,7 +79,9 @@ func (ctx *Context) searchDir(dir string) error {
 			return err
 		}
 
+		// Add the template with and without the package name
 		ctx.Templates[name] = t
+		ctx.Templates[dirName+"."+name] = t
 	}
 
 	log.Printf("found %d templates in %s", len(paths), dir)
