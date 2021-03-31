@@ -2,10 +2,14 @@ package codegen
 
 import (
 	"go/token"
+	"go/types"
 	"log"
 	"path"
 	"path/filepath"
 	"text/template"
+
+	"github.com/Masterminds/sprig/v3"
+	"github.com/jinzhu/inflection"
 )
 
 // Context represents the context in which a code generation operation is run.
@@ -47,6 +51,15 @@ func (ctx *Context) Populate() error {
 	return nil
 }
 
+var templateFunctions template.FuncMap
+
+func init() {
+	templateFunctions = sprig.TxtFuncMap()
+	templateFunctions["singular"] = inflection.Singular
+	templateFunctions["plural"] = inflection.Plural
+	templateFunctions["typeName"] = types.ExprString
+}
+
 func (ctx *Context) searchDir(dir string) error {
 	// search directory for every template in the package
 	pat := path.Join(dir, "*.tmpl")
@@ -60,7 +73,7 @@ func (ctx *Context) searchDir(dir string) error {
 		base := path.Base(p)
 		name := base[:len(base)-len(".tmpl")]
 
-		t, err := template.New(base).ParseFiles(p)
+		t, err := template.New(base).Funcs(templateFunctions).ParseFiles(p)
 		if err != nil {
 			return err
 		}
