@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	codegen "github.com/nullstyle/go-codegen"
+	codegen "github.com/CyborgMaster/go-codegen"
 )
 
 var includes = flag.String(
