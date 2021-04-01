@@ -31,6 +31,8 @@ func NewContext(dir string, searchPaths []string) (*Context, error) {
 		Fset:        token.NewFileSet(),
 		PackageName: "main", // default to main
 		Results:     map[string]string{},
+		Templates:   map[string]*template.Template{},
+		Imports:     map[string]bool{},
 	}
 	return result, result.Populate()
 }
@@ -38,9 +40,6 @@ func NewContext(dir string, searchPaths []string) (*Context, error) {
 // Populate fills in the rest of the context based upon the context's
 // config.
 func (ctx *Context) Populate() error {
-	ctx.Templates = make(map[string]*template.Template)
-	ctx.Imports = make(map[string]bool)
-
 	for _, dir := range ctx.SearchPaths {
 		err := ctx.searchDir(dir)
 		if err != nil {

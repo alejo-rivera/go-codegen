@@ -1,12 +1,9 @@
 package codegen
 
 import (
-	"bytes"
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"path"
-	"sort"
 	"strings"
 )
 
@@ -43,7 +40,7 @@ func ProcessDir(dir string, searchPath []string) error {
 		}
 	}
 
-	return Output(ctx, "main_generated.go", collectResults(ctx))
+	return Output(ctx, "main_generated.go")
 }
 
 // ProcessFilePath runs the code gen engine against a single file, at `p` using
@@ -68,24 +65,7 @@ func ProcessFilePath(p string, searchPath []string) error {
 
 	base := path.Base(p)
 	name := base[:len(base)-len(".go")]
-	return Output(ctx, name+"_generated.go", collectResults(ctx))
-}
-
-func collectResults(ctx *Context) string {
-	var output bytes.Buffer
-	var resultKeys []string
-
-	for k := range ctx.Results {
-		resultKeys = append(resultKeys, k)
-	}
-
-	sort.Strings(resultKeys)
-
-	for _, k := range resultKeys {
-		fmt.Fprintln(&output, ctx.Results[k])
-	}
-
-	return output.String()
+	return Output(ctx, name+"_generated.go")
 }
 
 func processFile(ctx *Context, file *ast.File) error {
