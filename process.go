@@ -11,44 +11,16 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func Process(arg string) error {
-	if strings.HasSuffix(arg, ".go") {
-		return ProcessFilePath(arg)
+func ProcessFile(filePath string) error {
+	if !strings.HasSuffix(filePath, ".go") {
+		return errors.New(filePath + " does not reference a go file")
 	}
-	return ProcessDir(arg)
-}
 
-// ProcessDir runs the code gen engine against all files in `dir`.
-func ProcessDir(dir string) error {
-	ctx := NewGenContext()
-
-	// pkgs, err := parser.ParseDir(ctx.Fset, ctx.Dir, nil, 0)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// for _, pkg := range pkgs {
-	// 	for _, file := range pkg.Files {
-	// 		err := processFile(ctx, file)
-
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }
-
-	return Output(ctx, "main_generated.go")
-}
-
-// ProcessFilePath runs the code gen engine against a single file.
-func ProcessFilePath(filePath string) error {
 	ctx := NewGenContext()
 
 	cfg := &packages.Config{
 		Fset: ctx.Fset,
-		// TODO: make sure these all are needed.
 		Mode: packages.NeedName |
-			packages.NeedSyntax |
 			packages.NeedTypes |
 			packages.NeedDeps,
 	}
@@ -67,6 +39,10 @@ func ProcessFilePath(filePath string) error {
 		if err := processStruct(s, ctx); err != nil {
 			return errors.Wrapf(err, "processing struct %s", s.Obj().Name())
 		}
+	}
+
+	if len(ctx.Generated) == 0 {
+		return errors.New("No codegen tags detected in file " + filePath)
 	}
 
 	base := filePath[:len(filePath)-len(".go")]

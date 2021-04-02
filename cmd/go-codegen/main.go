@@ -8,41 +8,13 @@ import (
 	codegen "github.com/CyborgMaster/go-codegen"
 )
 
-// TODO: remove includes
-// var includes = flag.String(
-// 	"include",
-// 	".",
-// 	"A colon separated list of directories to search for templates",
-// )
-
 func main() {
 	flag.Parse()
 
 	args := flag.Args()
 	if len(args) == 0 {
-		args = []string{"."}
+		log.Fatalln("expected one or more go files are arguments")
 	}
-
-	// searchPath := []string{"."}
-	// if *includes != "" {
-	// 	for _, path := range strings.Split(*includes, ":") {
-	// 		path, err := filepath.Abs(path)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-
-	// 		stat, err := os.Stat(path)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-
-	// 		if !stat.IsDir() {
-	// 			log.Fatalf("not a directory: %s", path)
-	// 		}
-
-	// 		searchPath = append(searchPath, path)
-	// 	}
-	// }
 
 	for _, arg := range args {
 		arg, err := filepath.Abs(arg)
@@ -50,7 +22,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		if err := codegen.Process(arg); err != nil {
+		if err := codegen.ProcessFile(arg); err != nil {
 			log.Fatalln(err)
 		}
 	}
