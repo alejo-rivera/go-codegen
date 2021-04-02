@@ -34,7 +34,7 @@ func RunTemplate(invocation Invocation, aStruct *types.Named, ctx *GenContext) e
 }
 
 type TemplateContext struct {
-	Args         []string
+	Args         map[string]string
 	StructName   string
 	TemplateName string
 	PackageName  string
@@ -47,6 +47,15 @@ type TemplateContext struct {
 func (c *TemplateContext) AddImport(name string) string {
 	c.ctx.AddImport(name)
 	return ""
+}
+
+func (c *TemplateContext) Arg(name string) string {
+	return c.Args[name]
+}
+
+func (c *TemplateContext) HasArg(name string) bool {
+	_, has := c.Args[name]
+	return has
 }
 
 func (c *TemplateContext) Implements(aType types.Type, interfaceName string) (bool, error) {
