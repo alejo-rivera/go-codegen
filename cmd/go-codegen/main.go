@@ -50,9 +50,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = codegen.Process(arg)
-
-		if err != nil {
+		if err := codegen.Process(arg); err != nil {
 			log.Fatalln(err)
 		}
 	}

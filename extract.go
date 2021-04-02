@@ -2,67 +2,73 @@ package codegen
 
 import (
 	"errors"
-	"fmt"
-	"go/ast"
-	"os"
+	"go/types"
 	"reflect"
 	"strings"
 )
 
+type Invocation struct {
+	GenType *types.Named
+	Args    []string
+}
+
+// ExtractTemplatesFromStruct returns a slice of template types that should be
+// invoked upon the provided struct.
+func InvocationsForStruct(aStruct *types.Struct) ([]Invocation, error) {
+	var invocations []Invocation
+	for i := 0; i < aStruct.NumFields(); i++ {
+		tag := reflect.StructTag(aStruct.Tag(i))
+		genTag, ok := tag.Lookup("codegen")
+		if !ok {
+			continue
+		}
+		field := aStruct.Field(i)
+		if !field.Embedded() {
+			return nil, errors.New("codegen tag used on non embedded field " + field.Name())
+		}
+		genType, ok := aStruct.Field(i).Type().(*types.Named)
+		if !ok {
+			return nil, errors.New("expected named type for field " + field.Name())
+		}
+
+		invocations = append(invocations, Invocation{
+			GenType: genType,
+			Args:    strings.Split(genTag, ","),
+		})
+	}
+
+	return invocations, nil
+}
+
 // ExtractArgs parses the arguments out of a template invocation, using
 // the invoking fields tags.
-func ExtractArgs(ctx *Context, stp *ast.StructType, name string) ([]string, error) {
-	var found *ast.Field
+// func ExtractArgs(ctx *Context, stp *ast.StructType, name string) ([]string, error) {
+// 	var found *ast.Field
 
-	for _, f := range stp.Fields.List {
-		// fname, err := nameFromFieldType(ctx, f.Type)
-		fname, err := "test", error(nil)
-		if err != nil {
-			return nil, err
-		}
+// 	for _, f := range stp.Fields.List {
+// 		// fname, err := nameFromFieldType(ctx, f.Type)
+// 		fname, err := "test", error(nil)
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		if name == fname {
-			found = f
-		}
-	}
+// 		if name == fname {
+// 			found = f
+// 		}
+// 	}
 
-	if found == nil {
-		return nil, errors.New("Couldn't find template invocation: " + name)
-	}
+// 	if found == nil {
+// 		return nil, errors.New("Couldn't find template invocation: " + name)
+// 	}
 
-	if found.Tag == nil {
-		return nil, nil
-	}
+// 	if found.Tag == nil {
+// 		return nil, nil
+// 	}
 
-	tag := reflect.StructTag(found.Tag.Value[1 : len(found.Tag.Value)-1])
+// 	tag := reflect.StructTag(found.Tag.Value[1 : len(found.Tag.Value)-1])
 
-	return strings.Split(tag.Get("template"), ","), nil
-}
-
-// ExtractTemplatesFromType returns a slice of templates that have been invoked
-// upon the provided struct.
-func ExtractTemplatesFromType(
-	ctx *Context,
-	stp *ast.StructType,
-) (result []string, err error) {
-	for _, f := range stp.Fields.List {
-		var name string
-		// name, err = nameFromFieldType(ctx, f.Type)
-		name, err = "test", nil
-		if err != nil {
-			return
-		}
-
-		if _, ok := ctx.Templates[name]; ok {
-			result = append(result, name)
-
-			if len(f.Names) != 0 {
-				fmt.Fprintf(os.Stderr, "warn: invocation of template '%s' has a field name\n", name)
-			}
-		}
-	}
-	return
-}
+// 	return strings.Split(tag.Get("template"), ","), nil
+// }
 
 // func extractText(ctx *Context, t ast.Expr) (string, error) {
 // 	pos := ctx.Fset.Position(t.Pos())

@@ -2,57 +2,45 @@ package codegen
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
-	"go/ast"
-	"os"
+	"go/types"
+
+	"github.com/pkg/errors"
 )
 
 type TemplateContext struct {
+	Args         []string
 	StructName   string
 	TemplateName string
 	PackageName  string
-	Ctx          *Context
-	Struct       *ast.StructType
+	Struct       *types.Struct
+
+	ctx *GenContext
 }
 
-func (mc *TemplateContext) Args() []string {
-	// find the field with our template's name
-	result, err := ExtractArgs(mc.Ctx, mc.Struct, mc.TemplateName)
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "warn: couldn't get args for %s on %s\n", mc.TemplateName, mc.StructName)
-	}
-
-	return result
-}
-
-func (mc *TemplateContext) AddImport(name string) string {
-	mc.Ctx.Imports[name] = true
+// For a function to be callable from a template, it must return something.
+func (c *TemplateContext) AddImport(name string) string {
+	c.ctx.Imports[name] = true
 	return ""
 }
 
-func RunTemplate(ctx *Context, templateName string, typeName string, st *ast.StructType) error {
-	template, ok := ctx.Templates[templateName]
-	if !ok {
-		return errors.New("Could not find template: " + templateName)
+func RunTemplate(invocation Invocation, aStruct *types.Named, ctx *GenContext) error {
+	template, err := ctx.TemplateForGenType(invocation.GenType)
+	if err != nil {
+		return errors.Wrap(err, "getting template")
 	}
 
-	// populate the template object
-	mc := &TemplateContext{
-		StructName:   typeName,
-		TemplateName: templateName,
-		// PackageName:  ctx.PackageName,
-		Ctx:    ctx,
-		Struct: st,
+	c := &TemplateContext{
+		Args:         invocation.Args,
+		StructName:   aStruct.Obj().Name(),
+		TemplateName: template.Name(),
+		PackageName:  ctx.PackageName,
+		Struct:       aStruct.Underlying().(*types.Struct),
+		ctx:          ctx,
 	}
 	var result bytes.Buffer
-	err := template.Execute(&result, mc)
-	if err != nil {
+	if err := template.Execute(&result, c); err != nil {
 		return err
 	}
-
-	ctx.Generated[typeName] = result.String()
-
+	ctx.Generated = append(ctx.Generated, result.String())
 	return nil
 }

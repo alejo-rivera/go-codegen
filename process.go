@@ -2,7 +2,6 @@ package codegen
 
 import (
 	"fmt"
-	"go/ast"
 	"go/token"
 	"go/types"
 	"os"
@@ -23,7 +22,7 @@ func Process(arg string) error {
 
 // ProcessDir runs the code gen engine against all files in `dir`.
 func ProcessDir(dir string) error {
-	ctx := NewContext()
+	ctx := NewGenContext()
 
 	// pkgs, err := parser.ParseDir(ctx.Fset, ctx.Dir, nil, 0)
 	// if err != nil {
@@ -43,13 +42,14 @@ func ProcessDir(dir string) error {
 	return Output(ctx, "main_generated.go")
 }
 
-// ProcessFilePath runs the code gen engine against a single file, at `p`
+// ProcessFilePath runs the code gen engine against a single file.
 func ProcessFilePath(filePath string) error {
-	// ctx := NewContext()
+	ctx := NewGenContext()
 
 	cfg := &packages.Config{
-		Fset: token.NewFileSet(),
-		Mode: packages.NeedFiles |
+		Fset: ctx.Fset,
+		// TODO: make sure these all are needed.
+		Mode: packages.NeedName |
 			packages.NeedSyntax |
 			packages.NeedTypes |
 			packages.NeedDeps,
@@ -61,55 +61,45 @@ func ProcessFilePath(filePath string) error {
 	if l := len(pkgs); l != 1 {
 		return errors.New("expected only 1 package, found " + strconv.Itoa(l))
 	}
-	structs := findStructsInFile(filePath, pkgs[0], cfg.Fset)
+	pkg := pkgs[0]
+	ctx.PackageName = pkg.Name
+	structs := findStructsInFile(filePath, pkg, ctx.Fset)
+
 	for _, s := range structs {
-		fmt.Printf("%s\n", s)
+		if err := processStruct(s, ctx); err != nil {
+			return errors.Wrapf(err, "processing struct %s", s.Obj().Name())
+		}
 	}
-	// scope := pkg.Types.Scope()
-	// for _, name := range scope.Names() {
-	// 	object := scope.Lookup(name)
-	// 	_, ok := object.Type().Underlying().(*types.Struct)
-	// 	if !ok {
-	// 		continue
-	// 	}
-	// 	fpath := cfg.Fset.Position(object.Pos()).Filename
-	// 	if fpath != filePath {
-	// 		continue
-	// 	}
-	// }
 
+	base := filePath[:len(filePath)-len(".go")]
+	genPath := base + "_generated.go"
+	if err := Output(ctx, genPath); err != nil {
+		return errors.Wrap(err, "writing generated code to "+genPath)
+	}
+	fmt.Printf("Wrote %s.\n", genPath)
 	return nil
-	// fmt.Println("lookup:", t)
-	// fmt.Printf("type: %T\n", t)
-	// for i := 0; i < t.NumFields(); i++ {
-	// 	f := t.Field(i)
-	// 	fmt.Println("field:", f)
-	// 	fmt.Println("tag:", t.Tag(i))
-	// 	fmt.Println("type:", f.Type())
+}
+
+func processStruct(aStruct *types.Named, ctx *GenContext) error {
+	invocations, err := InvocationsForStruct(aStruct.Underlying().(*types.Struct))
+	if err != nil {
+		return errors.Wrap(err, "extracting template invocations")
+	}
+
+	for _, invocation := range invocations {
+		if err := RunTemplate(invocation, aStruct, ctx); err != nil {
+			return errors.Wrap(err, "running template")
+		}
+	}
+
+	// for _, templateName := range templates {
+	// 	err := RunTemplate(ctx, templateName, tsp.Name.Name, stp)
+	// 	if err != nil {
+	// 		return err
+	// 	}
 	// }
-
-	// f := t.Field(0)
-	// fmt.Println("field:", f)
-	// fmt.Println("type:", f.Type())
-	// fmt.Printf("typetype: %T\n", f.Type())
-	// pos := f.Type().(*types.Named).Obj().Pos()
-	// fpath := pkgs[0].Fset.Position(pos).Filename
-	// fmt.Println("fst:", path.Dir(fpath))
-	// return nil
-
-	// file, err := parser.ParseFile(ctx.Fset, p, nil, 0)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = processFile(ctx, file)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// base := path.Base(p)
-	// name := base[:len(base)-len(".go")]
-	// return Output(ctx, name+"_generated.go")
+	//
+	return nil
 }
 
 func findStructsInFile(
@@ -141,61 +131,61 @@ func findStructsInFile(
 	return structs
 }
 
-func processFile(ctx *Context, file *ast.File) error {
-	// ctx.PackageName = file.Name.Name
+// func processFile(ctx *Context, file *ast.File) error {
+// 	// ctx.PackageName = file.Name.Name
 
-	for _, decl := range file.Decls {
-		err := processDecl(ctx, decl)
-		if err != nil {
-			return err
-		}
-	}
+// 	for _, decl := range file.Decls {
+// 		err := processDecl(ctx, decl)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func processDecl(ctx *Context, decl ast.Decl) error {
-	gdp, ok := decl.(*ast.GenDecl)
+// func processDecl(ctx *Context, decl ast.Decl) error {
+// 	gdp, ok := decl.(*ast.GenDecl)
 
-	if !ok {
-		return nil
-	}
+// 	if !ok {
+// 		return nil
+// 	}
 
-	for _, spec := range gdp.Specs {
-		err := processSpec(ctx, spec)
-		if err != nil {
-			return err
-		}
-	}
+// 	for _, spec := range gdp.Specs {
+// 		err := processSpec(ctx, spec)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func processSpec(ctx *Context, spec ast.Spec) error {
-	tsp, ok := spec.(*ast.TypeSpec)
-	if !ok {
-		return nil
-	}
+// func processSpec(ctx *Context, spec ast.Spec) error {
+// 	tsp, ok := spec.(*ast.TypeSpec)
+// 	if !ok {
+// 		return nil
+// 	}
 
-	stp, ok := tsp.Type.(*ast.StructType)
-	if !ok {
-		return nil
-	}
+// 	stp, ok := tsp.Type.(*ast.StructType)
+// 	if !ok {
+// 		return nil
+// 	}
 
-	templates, err := ExtractTemplatesFromType(ctx, stp)
-	if err != nil {
-		return err
-	}
+// 	templates, err := ExtractTemplatesFromType(ctx, stp)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	for _, templateName := range templates {
-		err := RunTemplate(ctx, templateName, tsp.Name.Name, stp)
-		if err != nil {
-			return err
-		}
-	}
+// 	for _, templateName := range templates {
+// 		err := RunTemplate(ctx, templateName, tsp.Name.Name, stp)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func test(p string) {
 	cfg := &packages.Config{
