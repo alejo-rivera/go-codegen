@@ -73,6 +73,7 @@ func init() {
 	templateFunctions["singular"] = inflection.Singular
 	templateFunctions["plural"] = inflection.Plural
 	templateFunctions["typeName"] = typeName
+	templateFunctions["pointerType"] = pointerType
 }
 
 func typeName(t types.Type) string {
@@ -82,4 +83,8 @@ func typeName(t types.Type) string {
 	default:
 		return t.String()
 	}
+}
+
+func pointerType(t types.Type) *types.Pointer {
+	return types.NewPointer(t)
 }
