@@ -19,7 +19,7 @@ type TemplateContext struct {
 
 // For a function to be callable from a template, it must return something.
 func (c *TemplateContext) AddImport(name string) string {
-	c.ctx.Imports[name] = true
+	c.ctx.AddImport(name)
 	return ""
 }
 

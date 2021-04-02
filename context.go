@@ -16,42 +16,27 @@ import (
 type GenContext struct {
 	Fset        *token.FileSet
 	PackageName string
+	Generated   []string
 
-	// TODO: unexported
-	Templates map[string]*template.Template
-
-	// TODO: ordered imports
-	Imports   map[string]bool
-	Generated []string
+	templates   map[string]*template.Template
+	imports     []string
+	importsSeen map[string]struct{}
 }
 
 // NewContext initializes a new code generation context.
 func NewGenContext() *GenContext {
 	return &GenContext{
-		Fset:      token.NewFileSet(),
-		Templates: map[string]*template.Template{},
-		Imports:   map[string]bool{},
+		Fset:        token.NewFileSet(),
+		templates:   make(map[string]*template.Template),
+		importsSeen: make(map[string]struct{}),
 	}
 }
-
-// Populate fills in the rest of the context based upon the context's
-// config.
-// func (ctx *Context) Populate() error {
-// 	for _, dir := range ctx.SearchPaths {
-// 		err := ctx.searchDir(dir)
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
-
-// 	return nil
-// }
 
 func (ctx *GenContext) TemplateForGenType(genType *types.Named) (*template.Template, error) {
 	name := genType.Obj().Name()
 	fullName := genType.Obj().Pkg().Path() + "." + name
 	fmt.Println("looking for template for " + fullName)
-	if template, ok := ctx.Templates[fullName]; ok {
+	if template, ok := ctx.templates[fullName]; ok {
 		return template, nil
 	}
 
@@ -70,8 +55,22 @@ func (ctx *GenContext) TemplateForGenType(genType *types.Named) (*template.Templ
 		return nil, errors.Wrap(err, "parsing template")
 	}
 	fmt.Println(template)
-	ctx.Templates[fullName] = template
+	ctx.templates[fullName] = template
 	return template, nil
+}
+
+func (ctx *GenContext) AddImport(pkg string) {
+	if _, seen := ctx.importsSeen[pkg]; seen {
+		return
+	}
+	ctx.imports = append(ctx.imports, pkg)
+	ctx.importsSeen[pkg] = struct{}{}
+}
+
+func (ctx *GenContext) Imports() []string {
+	i := make([]string, len(ctx.imports))
+	copy(i, ctx.imports)
+	return i
 }
 
 var templateFunctions template.FuncMap
@@ -91,32 +90,3 @@ func typeName(t types.Type) string {
 		return t.String()
 	}
 }
-
-// func (ctx *GenContext) AddTemplate(dir string) error {
-// 	// search directory for every template in the package
-// 	pat := path.Join(dir, "*.tmpl")
-// 	paths, err := filepath.Glob(pat)
-
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	for _, p := range paths {
-// 		base := path.Base(p)
-// 		name := base[:len(base)-len(".tmpl")]
-
-// 		t, err := template.New(base).Funcs(templateFunctions).ParseFiles(p)
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		// Add the template with and without the package name
-// 		ctx.Templates[name] = t
-// 		dirName := path.Base(dir)
-// 		ctx.Templates[dirName+"."+name] = t
-// 	}
-
-// 	log.Printf("found %d templates in %s", len(paths), dir)
-
-// 	return nil
-// }
