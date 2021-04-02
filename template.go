@@ -11,22 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type TemplateContext struct {
-	Args         []string
-	StructName   string
-	TemplateName string
-	PackageName  string
-	Struct       *types.Struct
-
-	ctx *GenContext
-}
-
-// For a function to be callable from a template, it must return something.
-func (c *TemplateContext) AddImport(name string) string {
-	c.ctx.AddImport(name)
-	return ""
-}
-
 func RunTemplate(invocation Invocation, aStruct *types.Named, ctx *GenContext) error {
 	template, err := ctx.TemplateForGenType(invocation.GenType)
 	if err != nil {
@@ -47,6 +31,34 @@ func RunTemplate(invocation Invocation, aStruct *types.Named, ctx *GenContext) e
 	}
 	ctx.Generated = append(ctx.Generated, result.String())
 	return nil
+}
+
+type TemplateContext struct {
+	Args         []string
+	StructName   string
+	TemplateName string
+	PackageName  string
+	Struct       *types.Struct
+
+	ctx *GenContext
+}
+
+// For a function to be callable from a template, it must return something.
+func (c *TemplateContext) AddImport(name string) string {
+	c.ctx.AddImport(name)
+	return ""
+}
+
+func (c *TemplateContext) Implements(aType types.Type, interfaceName string) (bool, error) {
+	t, err := c.ctx.GetType(interfaceName)
+	if err != nil {
+		return false, err
+	}
+	i, ok := t.(*types.Interface)
+	if !ok {
+		return false, errors.Errorf("%s is not an interface", interfaceName)
+	}
+	return types.Implements(aType, i), nil
 }
 
 func ParseTemplate(path string) (*template.Template, error) {

@@ -4,27 +4,37 @@ import (
 	"go/token"
 	"go/types"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
+	"golang.org/x/tools/go/types/typeutil"
 )
 
 // Context represents the context in which a code generation operation is run.
 type GenContext struct {
-	Fset        *token.FileSet
 	PackageName string
 	Generated   []string
 
 	templates   map[string]*template.Template
 	imports     []string
 	importsSeen map[string]struct{}
+	fset        *token.FileSet
+	packages    map[string]*types.Package
 }
 
-func NewGenContext() *GenContext {
+func NewGenContext(fset *token.FileSet, rootPackage *types.Package) *GenContext {
+	allPackages := typeutil.Dependencies(rootPackage)
+	packageMap := make(map[string]*types.Package)
+	for _, pkg := range allPackages {
+		packageMap[pkg.Path()] = pkg
+	}
 	return &GenContext{
-		Fset:        token.NewFileSet(),
+		PackageName: rootPackage.Name(),
 		templates:   make(map[string]*template.Template),
 		importsSeen: make(map[string]struct{}),
+		fset:        fset,
+		packages:    packageMap,
 	}
 }
 
@@ -36,7 +46,7 @@ func (ctx *GenContext) TemplateForGenType(genType *types.Named) (*template.Templ
 	}
 
 	pos := genType.Obj().Pos()
-	fpath := ctx.Fset.Position(pos).Filename
+	fpath := ctx.fset.Position(pos).Filename
 	templatePath := filepath.Join(filepath.Dir(fpath), genName+".tmpl")
 	template, err := ParseTemplate(templatePath)
 	if err != nil {
@@ -58,4 +68,25 @@ func (ctx *GenContext) Imports() []string {
 	i := make([]string, len(ctx.imports))
 	copy(i, ctx.imports)
 	return i
+}
+
+func (ctx *GenContext) GetType(fullName string) (types.Type, error) {
+	lastDot := strings.LastIndex(fullName, ".")
+	if lastDot == -1 {
+		return nil, errors.Errorf("%s not a fully qualified type name", fullName)
+	}
+	pkgName := fullName[:lastDot]
+	name := fullName[lastDot+1:]
+
+	pkg, ok := ctx.packages[pkgName]
+	if !ok {
+		return nil, errors.Errorf("package %s not found", pkgName)
+	}
+	t := pkg.Scope().Lookup(name)
+	if t == nil {
+		return nil, errors.Errorf("type %s not found in package %s", name, pkgName)
+	}
+
+	// `Lookup` returns a `*types.Named`, we need the underlying type
+	return t.Type().Underlying(), nil
 }

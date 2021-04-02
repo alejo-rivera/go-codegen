@@ -16,10 +16,9 @@ func ProcessFile(filePath string) error {
 		return errors.New(filePath + " does not reference a go file")
 	}
 
-	ctx := NewGenContext()
-
+	fset := token.NewFileSet()
 	cfg := &packages.Config{
-		Fset: ctx.Fset,
+		Fset: fset,
 		Mode: packages.NeedName |
 			packages.NeedTypes |
 			packages.NeedDeps,
@@ -32,9 +31,9 @@ func ProcessFile(filePath string) error {
 		return errors.New("expected only 1 package, found " + strconv.Itoa(l))
 	}
 	pkg := pkgs[0]
-	ctx.PackageName = pkg.Name
-	structs := findStructsInFile(filePath, pkg, ctx.Fset)
+	structs := findStructsInFile(filePath, pkg, fset)
 
+	ctx := NewGenContext(fset, pkg.Types)
 	for _, s := range structs {
 		if err := processStruct(s, ctx); err != nil {
 			return errors.Wrapf(err, "processing struct %s", s.Obj().Name())
