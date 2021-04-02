@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"go/token"
 	"go/types"
-	"os"
-	"path"
 	"strconv"
 	"strings"
 
@@ -129,99 +127,4 @@ func findStructsInFile(
 		}
 	}
 	return structs
-}
-
-// func processFile(ctx *Context, file *ast.File) error {
-// 	// ctx.PackageName = file.Name.Name
-
-// 	for _, decl := range file.Decls {
-// 		err := processDecl(ctx, decl)
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
-
-// 	return nil
-// }
-
-// func processDecl(ctx *Context, decl ast.Decl) error {
-// 	gdp, ok := decl.(*ast.GenDecl)
-
-// 	if !ok {
-// 		return nil
-// 	}
-
-// 	for _, spec := range gdp.Specs {
-// 		err := processSpec(ctx, spec)
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
-
-// 	return nil
-// }
-
-// func processSpec(ctx *Context, spec ast.Spec) error {
-// 	tsp, ok := spec.(*ast.TypeSpec)
-// 	if !ok {
-// 		return nil
-// 	}
-
-// 	stp, ok := tsp.Type.(*ast.StructType)
-// 	if !ok {
-// 		return nil
-// 	}
-
-// 	templates, err := ExtractTemplatesFromType(ctx, stp)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	for _, templateName := range templates {
-// 		err := RunTemplate(ctx, templateName, tsp.Name.Name, stp)
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
-
-// 	return nil
-// }
-
-func test(p string) {
-	cfg := &packages.Config{
-		Mode: packages.NeedFiles |
-			packages.NeedSyntax |
-			packages.NeedTypes |
-			packages.NeedDeps,
-	}
-	pkgs, err := packages.Load(cfg, "file="+p)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "load: %v\n", err)
-		os.Exit(1)
-	}
-	// Print the names of the source files
-	// for each package listed on the command line.
-	for _, pkg := range pkgs {
-		fmt.Println(pkg.ID, pkg.GoFiles)
-	}
-	scope := pkgs[0].Types.Scope()
-	fmt.Println("scope:", scope)
-	fmt.Println("names:", scope.Names())
-	t := scope.Lookup("Component").Type().Underlying().(*types.Struct)
-	fmt.Println("lookup:", t)
-	fmt.Printf("type: %T\n", t)
-	for i := 0; i < t.NumFields(); i++ {
-		f := t.Field(i)
-		fmt.Println("field:", f)
-		fmt.Println("tag:", t.Tag(i))
-		fmt.Println("type:", f.Type())
-	}
-
-	f := t.Field(0)
-	fmt.Println("field:", f)
-	fmt.Println("type:", f.Type())
-	fmt.Printf("typetype: %T\n", f.Type())
-	pos := f.Type().(*types.Named).Obj().Pos()
-	fpath := pkgs[0].Fset.Position(pos).Filename
-	fmt.Println("fst:", path.Dir(fpath))
 }

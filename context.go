@@ -42,7 +42,6 @@ func (ctx *GenContext) TemplateForGenType(genType *types.Named) (*template.Templ
 
 	pos := genType.Obj().Pos()
 	fpath := ctx.Fset.Position(pos).Filename
-	// TODO: remove all references to path, use filepath instead
 	templateName := name + ".tmpl"
 	templatePath := filepath.Join(filepath.Dir(fpath), templateName)
 	fmt.Println("looking for template at " + templatePath)
