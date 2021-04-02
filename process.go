@@ -66,13 +66,6 @@ func processStruct(aStruct *types.Named, ctx *GenContext) error {
 		}
 	}
 
-	// for _, templateName := range templates {
-	// 	err := RunTemplate(ctx, templateName, tsp.Name.Name, stp)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-	//
 	return nil
 }
 
@@ -89,11 +82,6 @@ func findStructsInFile(
 		if !ok {
 			continue
 		}
-
-		// fmt.Printf("object: %s\n", object)
-		// fmt.Printf("type: %T\n", object)
-		// fmt.Printf("object: %s\n", object.Type())
-		// fmt.Printf("type: %T\n", object.Type())
 		if _, ok = namedType.Underlying().(*types.Struct); !ok {
 			continue
 		}

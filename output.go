@@ -42,10 +42,9 @@ func outputImports(imports []string, w io.Writer) {
 	if len(imports) == 0 {
 		return
 	}
-	fmt.Fprint(w, "import (\n")
+	fmt.Fprintln(w, "import (")
 	for _, i := range imports {
 		fmt.Fprintf(w, "\t\"%s\"\n", i)
 	}
-	fmt.Fprint(w, ")\n")
-
+	fmt.Fprintln(w, ")")
 }

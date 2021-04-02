@@ -3,7 +3,11 @@ package codegen
 import (
 	"bytes"
 	"go/types"
+	"path/filepath"
+	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
+	"github.com/jinzhu/inflection"
 	"github.com/pkg/errors"
 )
 
@@ -43,4 +47,27 @@ func RunTemplate(invocation Invocation, aStruct *types.Named, ctx *GenContext) e
 	}
 	ctx.Generated = append(ctx.Generated, result.String())
 	return nil
+}
+
+func ParseTemplate(path string) (*template.Template, error) {
+	name := filepath.Base(path)
+	return template.New(name).Funcs(templateFunctions).ParseFiles(path)
+}
+
+var templateFunctions template.FuncMap
+
+func init() {
+	templateFunctions = sprig.TxtFuncMap()
+	templateFunctions["singular"] = inflection.Singular
+	templateFunctions["plural"] = inflection.Plural
+	templateFunctions["typeName"] = typeName
+}
+
+func typeName(t types.Type) string {
+	switch t := t.(type) {
+	case *types.Named:
+		return t.Obj().Pkg().Name() + "." + t.Obj().Name()
+	default:
+		return t.String()
+	}
 }
