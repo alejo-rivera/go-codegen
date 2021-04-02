@@ -9,7 +9,7 @@ import (
 )
 
 type TemplateContext struct {
-	Name         string
+	StructName   string
 	TemplateName string
 	PackageName  string
 	Ctx          *Context
@@ -21,7 +21,7 @@ func (mc *TemplateContext) Args() []string {
 	result, err := ExtractArgs(mc.Ctx, mc.Struct, mc.TemplateName)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warn: couldn't get args for %s on %s\n", mc.TemplateName, mc.Name)
+		fmt.Fprintf(os.Stderr, "warn: couldn't get args for %s on %s\n", mc.TemplateName, mc.StructName)
 	}
 
 	return result
@@ -40,20 +40,19 @@ func RunTemplate(ctx *Context, templateName string, typeName string, st *ast.Str
 
 	// populate the template object
 	mc := &TemplateContext{
-		Name:         typeName,
+		StructName:   typeName,
 		TemplateName: templateName,
-		PackageName:  ctx.PackageName,
-		Ctx:          ctx,
-		Struct:       st,
+		// PackageName:  ctx.PackageName,
+		Ctx:    ctx,
+		Struct: st,
 	}
 	var result bytes.Buffer
 	err := template.Execute(&result, mc)
-
 	if err != nil {
 		return err
 	}
 
-	ctx.Results[typeName] = result.String()
+	ctx.Generated[typeName] = result.String()
 
 	return nil
 }

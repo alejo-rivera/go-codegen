@@ -1,7 +1,6 @@
 package codegen
 
 import (
-	"go/token"
 	"go/types"
 	"log"
 	"path"
@@ -14,41 +13,37 @@ import (
 
 // Context represents the context in which a code generation operation is run.
 type Context struct {
-	Dir         string
-	SearchPaths []string
-	Fset        *token.FileSet
-	Templates   map[string]*template.Template
-	PackageName string
-	Imports     map[string]bool
-	Results     map[string]string
+	// Dir         string
+	// SearchPaths []string
+	// Fset      *token.FileSet
+	// PackageName string
+	Templates map[string]*template.Template
+	Imports   map[string]bool
+	Generated map[string]string
 }
 
 // NewContext initializes a new code generation context.
-func NewContext(dir string, searchPaths []string) (*Context, error) {
-	result := &Context{
-		Dir:         dir,
-		SearchPaths: searchPaths,
-		Fset:        token.NewFileSet(),
-		PackageName: "main", // default to main
-		Results:     map[string]string{},
-		Templates:   map[string]*template.Template{},
-		Imports:     map[string]bool{},
+func NewContext() *Context {
+	ctx := &Context{
+		Generated: map[string]string{},
+		Templates: map[string]*template.Template{},
+		Imports:   map[string]bool{},
 	}
-	return result, result.Populate()
+	return ctx
 }
 
 // Populate fills in the rest of the context based upon the context's
 // config.
-func (ctx *Context) Populate() error {
-	for _, dir := range ctx.SearchPaths {
-		err := ctx.searchDir(dir)
-		if err != nil {
-			return err
-		}
-	}
+// func (ctx *Context) Populate() error {
+// 	for _, dir := range ctx.SearchPaths {
+// 		err := ctx.searchDir(dir)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 var templateFunctions template.FuncMap
 
@@ -59,11 +54,10 @@ func init() {
 	templateFunctions["typeName"] = types.ExprString
 }
 
-func (ctx *Context) searchDir(dir string) error {
+func (ctx *Context) AddTemplate(dir string) error {
 	// search directory for every template in the package
 	pat := path.Join(dir, "*.tmpl")
 	paths, err := filepath.Glob(pat)
-	dirName := path.Base(dir)
 
 	if err != nil {
 		return err
@@ -80,6 +74,7 @@ func (ctx *Context) searchDir(dir string) error {
 
 		// Add the template with and without the package name
 		ctx.Templates[name] = t
+		dirName := path.Base(dir)
 		ctx.Templates[dirName+"."+name] = t
 	}
 

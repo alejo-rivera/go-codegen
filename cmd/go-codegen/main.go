@@ -3,18 +3,17 @@ package main
 import (
 	"flag"
 	"log"
-	"os"
 	"path/filepath"
-	"strings"
 
 	codegen "github.com/CyborgMaster/go-codegen"
 )
 
-var includes = flag.String(
-	"include",
-	".",
-	"A colon separated list of directories to search for templates",
-)
+// TODO: remove includes
+// var includes = flag.String(
+// 	"include",
+// 	".",
+// 	"A colon separated list of directories to search for templates",
+// )
 
 func main() {
 	flag.Parse()
@@ -24,26 +23,26 @@ func main() {
 		args = []string{"."}
 	}
 
-	searchPath := []string{"."}
-	if *includes != "" {
-		for _, path := range strings.Split(*includes, ":") {
-			path, err := filepath.Abs(path)
-			if err != nil {
-				log.Fatal(err)
-			}
+	// searchPath := []string{"."}
+	// if *includes != "" {
+	// 	for _, path := range strings.Split(*includes, ":") {
+	// 		path, err := filepath.Abs(path)
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
 
-			stat, err := os.Stat(path)
-			if err != nil {
-				log.Fatal(err)
-			}
+	// 		stat, err := os.Stat(path)
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
 
-			if !stat.IsDir() {
-				log.Fatalf("not a directory: %s", path)
-			}
+	// 		if !stat.IsDir() {
+	// 			log.Fatalf("not a directory: %s", path)
+	// 		}
 
-			searchPath = append(searchPath, path)
-		}
-	}
+	// 		searchPath = append(searchPath, path)
+	// 	}
+	// }
 
 	for _, arg := range args {
 		arg, err := filepath.Abs(arg)
@@ -51,7 +50,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = codegen.Process(arg, searchPath)
+		err = codegen.Process(arg)
 
 		if err != nil {
 			log.Fatalln(err)

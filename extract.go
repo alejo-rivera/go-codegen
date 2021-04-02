@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -16,7 +15,8 @@ func ExtractArgs(ctx *Context, stp *ast.StructType, name string) ([]string, erro
 	var found *ast.Field
 
 	for _, f := range stp.Fields.List {
-		fname, err := nameFromFieldType(ctx, f.Type)
+		// fname, err := nameFromFieldType(ctx, f.Type)
+		fname, err := "test", error(nil)
 		if err != nil {
 			return nil, err
 		}
@@ -47,7 +47,8 @@ func ExtractTemplatesFromType(
 ) (result []string, err error) {
 	for _, f := range stp.Fields.List {
 		var name string
-		name, err = nameFromFieldType(ctx, f.Type)
+		// name, err = nameFromFieldType(ctx, f.Type)
+		name, err = "test", nil
 		if err != nil {
 			return
 		}
@@ -63,23 +64,23 @@ func ExtractTemplatesFromType(
 	return
 }
 
-func extractText(ctx *Context, t ast.Expr) (string, error) {
-	pos := ctx.Fset.Position(t.Pos())
-	end := ctx.Fset.Position(t.End())
+// func extractText(ctx *Context, t ast.Expr) (string, error) {
+// 	pos := ctx.Fset.Position(t.Pos())
+// 	end := ctx.Fset.Position(t.End())
 
-	read, err := ioutil.ReadFile(pos.Filename)
-	if err != nil {
-		return "", err
-	}
+// 	read, err := ioutil.ReadFile(pos.Filename)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	return string(read[pos.Offset:end.Offset]), nil
-}
+// 	return string(read[pos.Offset:end.Offset]), nil
+// }
 
-func nameFromFieldType(ctx *Context, t ast.Expr) (string, error) {
-	txt, err := extractText(ctx, t)
-	if err != nil {
-		return "", err
-	}
+// func nameFromFieldType(ctx *Context, t ast.Expr) (string, error) {
+// 	txt, err := extractText(ctx, t)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	return txt, nil
-}
+// 	return txt, nil
+// }
