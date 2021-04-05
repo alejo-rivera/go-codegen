@@ -22,6 +22,7 @@ func RunTemplate(
 		StructName:   aStruct.Obj().Name(),
 		TemplateName: template.Name(),
 		PackageName:  aStruct.Obj().Pkg().Name(),
+		PackagePath:  aStruct.Obj().Pkg().Path(),
 		Struct:       aStruct.Underlying().(*types.Struct),
 		info:         info,
 	}
@@ -42,6 +43,7 @@ type TemplateContext struct {
 	StructName   string
 	TemplateName string
 	PackageName  string
+	PackagePath  string
 	Struct       *types.Struct
 
 	info TypeInfo
@@ -87,6 +89,7 @@ func init() {
 	templateFunctions["plural"] = inflection.Plural
 	templateFunctions["typeName"] = typeName
 	templateFunctions["pointerType"] = pointerType
+	templateFunctions["structField"] = structField
 }
 
 func typeName(t types.Type) string {
@@ -95,6 +98,16 @@ func typeName(t types.Type) string {
 		return t.Obj().Pkg().Name() + "." + t.Obj().Name()
 	default:
 		return t.String()
+	}
+}
+
+func structField(s *types.Struct, fieldName string) *types.Var {
+	obj, _, _ := types.LookupFieldOrMethod(s, true, nil, fieldName)
+	switch obj := obj.(type) {
+	case *types.Var:
+		return obj
+	default:
+		return nil
 	}
 }
 
