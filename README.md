@@ -15,7 +15,7 @@ original work, this repository remains a fork of his original.
 ## Installation
 
 ```bash
-go install github.com/cyborgmaster/go-codegen
+go install github.com/CyborgMaster/go-codegen/cmd/go-codegen
 ```
 
 ## Example usage
