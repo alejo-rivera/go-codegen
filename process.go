@@ -40,7 +40,7 @@ func ProcessFile(filePath string) error {
 		}
 	}
 
-	if len(ctx.Generated) == 0 {
+	if len(ctx.Generated()) == 0 {
 		return errors.New("No codegen tags detected in file " + filePath)
 	}
 
@@ -60,7 +60,7 @@ func processStruct(aStruct *types.Named, ctx *GenContext) error {
 	}
 
 	for _, invocation := range invocations {
-		if err := RunTemplate(invocation, aStruct, ctx); err != nil {
+		if err := ctx.RunTemplate(invocation, aStruct); err != nil {
 			return errors.Wrap(err, "running template")
 		}
 	}

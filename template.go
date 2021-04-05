@@ -11,26 +11,30 @@ import (
 	"github.com/pkg/errors"
 )
 
-func RunTemplate(invocation Invocation, aStruct *types.Named, ctx *GenContext) error {
-	template, err := ctx.TemplateForGenType(invocation.GenType)
-	if err != nil {
-		return errors.Wrap(err, "getting template")
-	}
-
+func RunTemplate(
+	template *template.Template,
+	aStruct *types.Named,
+	args map[string]string,
+	info TypeInfo,
+) (string, error) {
 	c := &TemplateContext{
-		Args:         invocation.Args,
+		Args:         args,
 		StructName:   aStruct.Obj().Name(),
 		TemplateName: template.Name(),
-		PackageName:  ctx.PackageName,
+		PackageName:  aStruct.Obj().Pkg().Name(),
 		Struct:       aStruct.Underlying().(*types.Struct),
-		ctx:          ctx,
+		info:         info,
 	}
 	var result bytes.Buffer
 	if err := template.Execute(&result, c); err != nil {
-		return err
+		return "", err
 	}
-	ctx.Generated = append(ctx.Generated, result.String())
-	return nil
+	return result.String(), nil
+}
+
+type TypeInfo interface {
+	AddImport(pkg string)
+	GetType(fullName string) (types.Type, error)
 }
 
 type TemplateContext struct {
@@ -40,12 +44,12 @@ type TemplateContext struct {
 	PackageName  string
 	Struct       *types.Struct
 
-	ctx *GenContext
+	info TypeInfo
 }
 
 // For a function to be callable from a template, it must return something.
 func (c *TemplateContext) AddImport(name string) string {
-	c.ctx.AddImport(name)
+	c.info.AddImport(name)
 	return ""
 }
 
@@ -59,7 +63,7 @@ func (c *TemplateContext) HasArg(name string) bool {
 }
 
 func (c *TemplateContext) Implements(aType types.Type, interfaceName string) (bool, error) {
-	t, err := c.ctx.GetType(interfaceName)
+	t, err := c.info.GetType(interfaceName)
 	if err != nil {
 		return false, err
 	}

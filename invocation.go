@@ -23,9 +23,6 @@ func InvocationsForStruct(aStruct *types.Struct) ([]Invocation, error) {
 			continue
 		}
 		field := aStruct.Field(i)
-		if !field.Embedded() {
-			return nil, errors.New("codegen tag used on non embedded field " + field.Name())
-		}
 		genType, ok := aStruct.Field(i).Type().(*types.Named)
 		if !ok {
 			return nil, errors.New("expected named type for field " + field.Name())
@@ -40,6 +37,24 @@ func InvocationsForStruct(aStruct *types.Struct) ([]Invocation, error) {
 			GenType: genType,
 			Args:    args,
 		})
+
+		// If the codegen field is itself a struct, then recurse.
+		if structType, ok := genType.Underlying().(*types.Struct); ok {
+			nested, err := InvocationsForStruct(structType)
+			if err != nil {
+				return nil, errors.Wrap(err, "nested "+genType.Obj().Name())
+			}
+			// Pass any args defined by the outer invocation that aren't defined by
+			// the inner invocation down.
+			for arg, v := range args {
+				for _, n := range nested {
+					if _, inner := n.Args[arg]; !inner {
+						n.Args[arg] = v
+					}
+				}
+			}
+			invocations = append(invocations, nested...)
+		}
 	}
 
 	return invocations, nil

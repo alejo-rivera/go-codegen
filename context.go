@@ -4,6 +4,7 @@ import (
 	"go/token"
 	"go/types"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"text/template"
 
@@ -14,13 +15,20 @@ import (
 // Context represents the context in which a code generation operation is run.
 type GenContext struct {
 	PackageName string
-	Generated   []string
 
-	templates   map[string]*template.Template
-	imports     []string
-	importsSeen map[string]struct{}
-	fset        *token.FileSet
-	packages    map[string]*types.Package
+	templates       map[string]*template.Template
+	imports         []string
+	importsSeen     map[string]struct{}
+	fset            *token.FileSet
+	packages        map[string]*types.Package
+	invocationsSeen []invocationSeen
+	generated       []string
+}
+
+type invocationSeen struct {
+	GenTypeName string
+	StructName  string
+	Args        map[string]string
 }
 
 func NewGenContext(fset *token.FileSet, rootPackage *types.Package) *GenContext {
@@ -38,22 +46,34 @@ func NewGenContext(fset *token.FileSet, rootPackage *types.Package) *GenContext 
 	}
 }
 
-func (ctx *GenContext) TemplateForGenType(genType *types.Named) (*template.Template, error) {
-	genName := genType.Obj().Name()
-	fullName := genType.Obj().Pkg().Path() + "." + genName
-	if template, ok := ctx.templates[fullName]; ok {
-		return template, nil
+func (ctx *GenContext) RunTemplate(invocation Invocation, aStruct *types.Named) error {
+	// If this exact invocation has already occurred (genType + structType +
+	// args), then don't do it again.
+	onStruct := invocationSeen{
+		GenTypeName: fullTypeName(invocation.GenType),
+		StructName:  fullTypeName(aStruct),
+		Args:        invocation.Args,
+	}
+	for _, i := range ctx.invocationsSeen {
+		// We have to use `reflect.DeepEqual` instead of `==` because `Args` is a
+		// map.
+		if reflect.DeepEqual(i, onStruct) {
+			return nil
+		}
+	}
+	ctx.invocationsSeen = append(ctx.invocationsSeen, onStruct)
+
+	template, err := ctx.templateForGenType(invocation.GenType)
+	if err != nil {
+		return errors.Wrap(err, "getting template")
 	}
 
-	pos := genType.Obj().Pos()
-	fpath := ctx.fset.Position(pos).Filename
-	templatePath := filepath.Join(filepath.Dir(fpath), genName+".tmpl")
-	template, err := ParseTemplate(templatePath)
+	generated, err := RunTemplate(template, aStruct, invocation.Args, ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing template")
+		return err
 	}
-	ctx.templates[fullName] = template
-	return template, nil
+	ctx.generated = append(ctx.generated, generated)
+	return nil
 }
 
 func (ctx *GenContext) AddImport(pkg string) {
@@ -67,6 +87,12 @@ func (ctx *GenContext) AddImport(pkg string) {
 func (ctx *GenContext) Imports() []string {
 	i := make([]string, len(ctx.imports))
 	copy(i, ctx.imports)
+	return i
+}
+
+func (ctx *GenContext) Generated() []string {
+	i := make([]string, len(ctx.generated))
+	copy(i, ctx.generated)
 	return i
 }
 
@@ -89,4 +115,25 @@ func (ctx *GenContext) GetType(fullName string) (types.Type, error) {
 
 	// `Lookup` returns a `*types.Named`, we need the underlying type
 	return t.Type().Underlying(), nil
+}
+
+func fullTypeName(named *types.Named) string {
+	return named.Obj().Pkg().Path() + "." + named.Obj().Name()
+}
+
+func (ctx *GenContext) templateForGenType(genType *types.Named) (*template.Template, error) {
+	fullName := fullTypeName(genType)
+	if template, ok := ctx.templates[fullName]; ok {
+		return template, nil
+	}
+
+	pos := genType.Obj().Pos()
+	fpath := ctx.fset.Position(pos).Filename
+	templatePath := filepath.Join(filepath.Dir(fpath), genType.Obj().Name()+".tmpl")
+	template, err := ParseTemplate(templatePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing template")
+	}
+	ctx.templates[fullName] = template
+	return template, nil
 }
