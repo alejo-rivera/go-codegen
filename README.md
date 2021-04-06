@@ -24,7 +24,7 @@ go-codegen works by scanning your file for structs with fields annotated with a
 `codegen` tag, and then will run the corresponding template with the same name
 as the field type in the same folder where the field type is defined.
 
-Take for example, the following go file:
+Take for example, the following go file called `commands.go`:
 
 ```go
 package main
@@ -95,7 +95,7 @@ func (cmd *{{ .StructName }}) MustExecute() interface{} {
 Notice the `{{ .StructName }}` expression:  It's just normal go template code.
 
 Now, given both files, lets generate the code.  Run `go generate .` in the
-package directory, and you'll see a file called `main_generated.go` whose
+package directory, and you'll see a file called `commands_generated.go` whose
 content looks like:
 
 ```go
@@ -151,7 +151,7 @@ type HelloArgs struct {
 }
 ```
 
-This are available inside the template by calling `$.Arg`, and their presence
+These are available inside the template by calling `$.Arg`, and their presence
 can be detected by calling `$.HasArg`
 
 ```go
@@ -163,7 +163,7 @@ can be detected by calling `$.HasArg`
 ### Nested Templates
 
 Templates may be recursive.  If the type which defines a template is itself a
-struct with field with a `codegen` tag, then both the outer and the nested
+struct with a field with a `codegen` tag, then both the outer and the nested
 template will be invoked on the root calling struct.
 
 ``` go
