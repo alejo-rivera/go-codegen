@@ -17,6 +17,8 @@ Types of changes:
 
 ## Unreleased
 
+## v0.2.0 - 2021-04-08
+
 ### Added
 
 - A new template method `structFields` which returns an array of the fields
