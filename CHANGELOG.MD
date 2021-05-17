@@ -17,6 +17,22 @@ Types of changes:
 
 ## Unreleased
 
+### Added
+
+- A new template context method `$.RequireArg` which returns the value of a
+  template argument if it was provided, and fails the generation if the argument
+  was not provided.
+- A new template context method `$.DefaultArg` which returns the value of a
+  template argument if it was provided, and a default value (second parameter
+  passed to `DefaultArg`) if the template argument was not provided.
+
+### Fixed
+
+- The template method `typeName` now correctly returns the name of pointer types
+  (without the asterisk).
+- The template method `structField` can now return un-exported fields in
+  addition to exported fields.
+
 ## v0.2.0 - 2021-04-08
 
 ### Added

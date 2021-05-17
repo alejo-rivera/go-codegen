@@ -64,6 +64,22 @@ func (c *TemplateContext) HasArg(name string) bool {
 	return has
 }
 
+func (c *TemplateContext) RequireArg(name string) (string, error) {
+	arg, has := c.Args[name]
+	if !has {
+		return "", errors.Errorf("required arg %s not found", name)
+	}
+	return arg, nil
+}
+
+func (c *TemplateContext) DefaultArg(name, defaultVal string) string {
+	arg, has := c.Args[name]
+	if !has {
+		return defaultVal
+	}
+	return arg
+}
+
 func (c *TemplateContext) Implements(aType types.Type, interfaceName string) (bool, error) {
 	t, err := c.info.GetType(interfaceName)
 	if err != nil {
@@ -97,6 +113,8 @@ func typeName(t types.Type) string {
 	switch t := t.(type) {
 	case *types.Named:
 		return t.Obj().Pkg().Name() + "." + t.Obj().Name()
+	case interface{ Elem() types.Type }:
+		return typeName(t.Elem())
 	default:
 		return t.String()
 	}
@@ -119,6 +137,16 @@ func structField(t types.Type, fieldName string) *types.Var {
 	if s == nil {
 		return nil
 	}
+
+	for i := 0; i < s.NumFields(); i++ {
+		f := s.Field(i)
+		if f.Name() == fieldName {
+			return f
+		}
+	}
+
+	// If we can't find it on the struct directly try checking nested structs with
+	// a lookup (will only be able to find exported fields in nested structs).
 	obj, _, _ := types.LookupFieldOrMethod(s, true, nil, fieldName)
 	switch obj := obj.(type) {
 	case *types.Var:
