@@ -17,6 +17,8 @@ Types of changes:
 
 ## Unreleased
 
+## v0.3.0 - 2021-05-17
+
 ### Added
 
 - A new template context method `$.RequireArg` which returns the value of a
