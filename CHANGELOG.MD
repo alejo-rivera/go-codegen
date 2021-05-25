@@ -17,6 +17,10 @@ Types of changes:
 
 ## Unreleased
 
+### Added
+
+- `-v` command line tag that prints the version number and exits.
+
 ## v0.3.0 - 2021-05-17
 
 ### Added

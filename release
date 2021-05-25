@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -eux
+set -o pipefail
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Git repository has uncommitted changes!"
+  exit 1
+fi
+echo "Git repository verified clean."
+
+sed -i.bak 's/Version = "[^"]*"/Version = "'${1}'"/' version.go
+rm version.go.bak
+git commit -a -m 'updated version.go to version '${1}''
+git tag ${1}
