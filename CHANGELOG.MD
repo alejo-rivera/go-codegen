@@ -17,6 +17,8 @@ Types of changes:
 
 ## Unreleased
 
+## v0.5.0 - 2022-05-05
+
 ### Added
 
 - New template context method `$.AddImportType` which takes a type object
