@@ -55,6 +55,23 @@ func (c *TemplateContext) AddImport(name string) string {
 	return ""
 }
 
+func (c *TemplateContext) AddImportType(t types.Type) (string, error) {
+	switch t := t.(type) {
+	case interface{ Elem() types.Type }:
+		return c.AddImportType(t.Elem())
+	case *types.Named:
+		pkg := t.Obj().Pkg()
+		if pkg != nil {
+			c.AddImport(pkg.Path())
+		}
+	case *types.Basic:
+		// No need to import
+	default:
+		return "", errors.Errorf("couldn't import '%s' of type %T", t, t)
+	}
+	return "", nil
+}
+
 func (c *TemplateContext) Arg(name string) string {
 	return c.Args[name]
 }
@@ -104,6 +121,7 @@ func init() {
 	templateFunctions["singular"] = inflection.Singular
 	templateFunctions["plural"] = inflection.Plural
 	templateFunctions["typeName"] = typeName
+	templateFunctions["typeString"] = typeString
 	templateFunctions["pointerType"] = pointerType
 	templateFunctions["structFields"] = structFields
 	templateFunctions["structField"] = structField
@@ -112,12 +130,27 @@ func init() {
 func typeName(t types.Type) string {
 	switch t := t.(type) {
 	case *types.Named:
-		return t.Obj().Pkg().Name() + "." + t.Obj().Name()
+		pkg := t.Obj().Pkg()
+		if pkg != nil {
+			return t.Obj().Pkg().Name() + "." + t.Obj().Name()
+		} else {
+			return t.Obj().Name()
+		}
 	case interface{ Elem() types.Type }:
 		return typeName(t.Elem())
 	default:
 		return t.String()
 	}
+}
+
+func typeString(t types.Type) string {
+	return types.TypeString(t, func(p *types.Package) string {
+		if p == nil {
+			return ""
+		} else {
+			return p.Name()
+		}
+	})
 }
 
 func structFields(t types.Type) []*types.Var {

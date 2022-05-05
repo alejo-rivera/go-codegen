@@ -17,6 +17,18 @@ Types of changes:
 
 ## Unreleased
 
+### Added
+
+- New template context method `$.AddImportType` which takes a type object
+  instead of a string.
+- New template method `typeString` which returns the full go representation of
+  the type, including '*' for pointers, '[]' for slices, etc.
+
+### Fixed
+
+- `typeName` no longer panics for basic types that don't have a package: `int`,
+  `string`, etc.
+
 ## v0.4.0 - 2021-05-25
 
 ### Added
