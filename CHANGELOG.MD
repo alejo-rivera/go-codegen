@@ -17,6 +17,22 @@ Types of changes:
 
 ## Unreleased
 
+### Added
+
+- New template method `isExported` that detects if a name is private or exported.
+
+### Changed
+
+- The template function `typeString` has been moved to a context method
+  `$.TypeString` in order to prevent including the package in the type string if
+  it is part of the current package.
+
+### Fixed
+
+- The current package is now always prevented from being imported into the
+  generated file, even if it is passed to `AddImport`.
+- Fixed parsing of the "codegen" tags to be compatible with go 1.17.
+
 ## v0.5.0 - 2022-05-05
 
 ### Added
