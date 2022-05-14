@@ -63,8 +63,8 @@ func InvocationsForStruct(aStruct *types.Struct) ([]Invocation, error) {
 func parseArgs(tag string) (map[string]string, error) {
 	// The format of the tag of `foo=bar,baz=quux` is almost identical to a query
 	// string so we picky back on this implementation, first replacing the commas
-	// with semicolons to be compatible with the query string
-	values, err := url.ParseQuery(strings.ReplaceAll(tag, ",", ";"))
+	// with '&' to be compatible with the query string.
+	values, err := url.ParseQuery(strings.ReplaceAll(tag, ",", "&"))
 	if err != nil {
 		return nil, err
 	}

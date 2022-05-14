@@ -37,13 +37,15 @@ func NewGenContext(fset *token.FileSet, rootPackage *types.Package) *GenContext 
 	for _, pkg := range allPackages {
 		packageMap[pkg.Path()] = pkg
 	}
-	return &GenContext{
+	ctx := &GenContext{
 		PackageName: rootPackage.Name(),
 		templates:   make(map[string]*template.Template),
 		importsSeen: make(map[string]struct{}),
 		fset:        fset,
 		packages:    packageMap,
 	}
+	ctx.importsSeen[rootPackage.Path()] = struct{}{}
+	return ctx
 }
 
 func (ctx *GenContext) RunTemplate(invocation Invocation, aStruct *types.Named) error {

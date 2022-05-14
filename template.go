@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"bytes"
+	"go/token"
 	"go/types"
 	"path/filepath"
 	"text/template"
@@ -109,6 +110,18 @@ func (c *TemplateContext) Implements(aType types.Type, interfaceName string) (bo
 	return types.Implements(aType, i), nil
 }
 
+func (c *TemplateContext) TypeString(t types.Type) string {
+	return types.TypeString(t, func(p *types.Package) string {
+		if p == nil {
+			return ""
+		} else if p.Path() == c.PackagePath {
+			return ""
+		} else {
+			return p.Name()
+		}
+	})
+}
+
 func ParseTemplate(path string) (*template.Template, error) {
 	name := filepath.Base(path)
 	return template.New(name).Funcs(templateFunctions).ParseFiles(path)
@@ -121,7 +134,7 @@ func init() {
 	templateFunctions["singular"] = inflection.Singular
 	templateFunctions["plural"] = inflection.Plural
 	templateFunctions["typeName"] = typeName
-	templateFunctions["typeString"] = typeString
+	templateFunctions["isExported"] = isExported
 	templateFunctions["pointerType"] = pointerType
 	templateFunctions["structFields"] = structFields
 	templateFunctions["structField"] = structField
@@ -143,14 +156,8 @@ func typeName(t types.Type) string {
 	}
 }
 
-func typeString(t types.Type) string {
-	return types.TypeString(t, func(p *types.Package) string {
-		if p == nil {
-			return ""
-		} else {
-			return p.Name()
-		}
-	})
+func isExported(name string) bool {
+	return token.IsExported(name)
 }
 
 func structFields(t types.Type) []*types.Var {
