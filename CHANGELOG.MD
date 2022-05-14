@@ -17,6 +17,8 @@ Types of changes:
 
 ## Unreleased
 
+## v0.6.0 - 2022-05-14
+
 ### Added
 
 - New template method `isExported` that detects if a name is private or exported.
