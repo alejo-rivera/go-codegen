@@ -5,6 +5,7 @@ import (
 	"go/token"
 	"go/types"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
@@ -133,11 +134,16 @@ func init() {
 	templateFunctions = sprig.TxtFuncMap()
 	templateFunctions["singular"] = inflection.Singular
 	templateFunctions["plural"] = inflection.Plural
+	templateFunctions["catNoSpace"] = catNoSpace
 	templateFunctions["typeName"] = typeName
 	templateFunctions["isExported"] = isExported
 	templateFunctions["pointerType"] = pointerType
 	templateFunctions["structFields"] = structFields
 	templateFunctions["structField"] = structField
+}
+
+func catNoSpace(ss ...string) string {
+	return strings.Join(ss, "")
 }
 
 func typeName(t types.Type) string {
