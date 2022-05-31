@@ -17,11 +17,19 @@ Types of changes:
 
 ## Unreleased
 
+### Added
+
+- New template function, `catNoSpace`, that concatenates multiple strings
+  together into one with no separators between them.  This complements the
+  already included `cat` function from Sprig
+  http://masterminds.github.io/sprig/strings.html which joins with a space in
+  between each string.
+
 ## v0.6.0 - 2022-05-14
 
 ### Added
 
-- New template method `isExported` that detects if a name is private or exported.
+- New template function `isExported` that detects if a name is private or exported.
 
 ### Changed
 
