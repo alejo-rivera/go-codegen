@@ -17,6 +17,8 @@ Types of changes:
 
 ## Unreleased
 
+## v0.7.0 - 2022-05-31
+
 ### Added
 
 - New template function, `catNoSpace`, that concatenates multiple strings
