@@ -1,5 +1,5 @@
 // MustExecute behaves like Execute, but panics if an error occurs.
-func (cmd *{{ .Name }}) MustExecute() interface{} {
+func (cmd *{{ .StructName }}) MustExecute() interface{} {
 	result, err := cmd.Execute()
 
   if err != nil {
