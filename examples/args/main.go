@@ -5,6 +5,9 @@ import (
 	"fmt"
 )
 
+//go:generate go-codegen $GOFILE
+type stackGen struct{}
+
 var ErrEmptyStack = errors.New("Empty stack!")
 
 type stack struct {
@@ -12,8 +15,9 @@ type stack struct {
 }
 
 type StringStack struct {
-	stack `template:"string"`
-	data  []string
+	stackGen `codegen:"type=string"`
+	stack
+	data []string
 }
 
 type Message struct {
@@ -22,8 +26,9 @@ type Message struct {
 }
 
 type MessageStack struct {
-	stack `template:"Message"`
-	data  []Message
+	stackGen `codegen:"type=Message"`
+	stack
+	data []Message
 }
 
 func main() {
