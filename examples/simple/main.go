@@ -2,10 +2,12 @@ package main
 
 import "fmt"
 
-//go:generate go-codegen
+//go:generate go-codegen $GOFILE
 
-// cmd is a template.  Blank interfaces are good to use for targeting templates
+// cmdGen is a template.  Blank struct are good to use for targeting templates
 // as they do not affect the compiled package.
+type cmdGen struct{}
+
 type cmd interface {
 	Execute() (interface{}, error)
 	MustExecute() interface{}
@@ -14,8 +16,8 @@ type cmd interface {
 type HelloCommand struct {
 	// HelloCommand needs to have the `cmd` template invoked upon it.
 	// By mixing in cmd, we tell go-codegen so.
-	cmd
-	Name string
+	cmdGen `codegen:""`
+	Name   string
 }
 
 func (cmd *HelloCommand) Execute() (interface{}, error) {
@@ -23,8 +25,8 @@ func (cmd *HelloCommand) Execute() (interface{}, error) {
 }
 
 type GoodbyeCommand struct {
-	cmd
-	Name string
+	cmdGen `codegen:""`
+	Name   string
 }
 
 func (cmd *GoodbyeCommand) Execute() (interface{}, error) {
