@@ -4,7 +4,7 @@ import "fmt"
 
 //go:generate go-codegen $GOFILE
 
-// cmdGen is a template.  Blank struct are good to use for targeting templates
+// cmdGen is a template.  Blank structs are good to use for targeting templates
 // as they do not affect the compiled package.
 type cmdGen struct{}
 
