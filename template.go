@@ -59,17 +59,82 @@ func (c *TemplateContext) AddImport(name string) string {
 
 func (c *TemplateContext) AddImportType(t types.Type) (string, error) {
 	switch t := t.(type) {
-	case interface{ Elem() types.Type }:
-		return c.AddImportType(t.Elem())
 	case *types.Named:
 		pkg := t.Obj().Pkg()
 		if pkg != nil {
 			c.AddImport(pkg.Path())
 		}
+	case *types.Map:
+		if _, err := c.AddImportType(t.Key()); err != nil {
+			return "", errors.Wrapf(err, "importing map key type '%s' of type %T", t, t)
+		}
+		if _, err := c.AddImportType(t.Elem()); err != nil {
+			return "", errors.Wrapf(err, "importing element type '%s' of type %T", t, t)
+		}
+	case *types.Interface:
+		// A bare `interface{}` we don't need to import, but for an interface
+		// literal, we need to import its embedded interfaces and function
+		// parameters and return types.
+		for i := 0; i < t.NumEmbeddeds(); i++ {
+			e := t.EmbeddedType(i)
+			if _, err := c.AddImportType(e); err != nil {
+				return "", errors.Wrapf(
+					err,
+					"importing embedded type '%s' of type %T from interface '%s'",
+					e, e, t,
+				)
+			}
+		}
+		for i := 0; i < t.NumExplicitMethods(); i++ {
+			m := t.ExplicitMethod(i)
+			mt := m.Type().(*types.Signature)
+			p := mt.Params()
+			if _, err := c.AddImportType(p); err != nil {
+				return "", errors.Wrapf(
+					err,
+					"importing params '%s' of type %T from interface method '%s'",
+					p, p, m.Name(),
+				)
+			}
+			r := mt.Results()
+			if _, err := c.AddImportType(r); err != nil {
+				return "", errors.Wrapf(
+					err,
+					"importing results '%s' of type %T from interface method '%s'",
+					r, r, m.Name(),
+				)
+			}
+		}
+	case *types.Struct:
+		// A named struct type will be handled above by `types.Named`, for a struct
+		// literal, we need to import its field types.
+		for i := 0; i < t.NumFields(); i++ {
+			f := t.Field(i)
+			if _, err := c.AddImportType(f.Type()); err != nil {
+				return "", errors.Wrapf(
+					err,
+					"importing struct field %s, '%s' of type %T",
+					f.Name(), t, t,
+				)
+			}
+		}
+	case *types.Tuple:
+		// Used for function parameters and results
+		for i := 0; i < t.Len(); i++ {
+			if _, err := c.AddImportType(t.At(i).Type()); err != nil {
+				return "", errors.Wrapf(
+					err,
+					"importing tuple index %d, '%s' of type %T",
+					i, t, t,
+				)
+			}
+		}
+	case interface{ Elem() types.Type }: // Array, Slice, Pointer, Channel
+		return c.AddImportType(t.Elem())
 	case *types.Basic:
 		// No need to import
 	default:
-		return "", errors.Errorf("couldn't import '%s' of type %T", t, t)
+		return "", errors.Errorf("couldn't add import for '%s' of type %T", t, t)
 	}
 	return "", nil
 }
