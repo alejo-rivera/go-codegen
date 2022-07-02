@@ -107,14 +107,14 @@ func (c *TemplateContext) AddImportType(t types.Type) (string, error) {
 		}
 	case *types.Struct:
 		// A named struct type will be handled above by `types.Named`, for a struct
-		// literal, we need to import its field types.
+		// type literal, we need to import its field types.
 		for i := 0; i < t.NumFields(); i++ {
 			f := t.Field(i)
 			if _, err := c.AddImportType(f.Type()); err != nil {
 				return "", errors.Wrapf(
 					err,
 					"importing struct field %s, '%s' of type %T",
-					f.Name(), t, t,
+					f.Name(), f.Type(), f.Type(),
 				)
 			}
 		}

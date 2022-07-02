@@ -17,6 +17,14 @@ Types of changes:
 
 ## Unreleased
 
+### Fixed
+
+- Fixed `$.AddImportType` failing on certain go types:
+  - interface literals
+  - struct type literals
+  - maps
+  - functions signatures
+
 ## v0.7.0 - 2022-05-31
 
 ### Added
