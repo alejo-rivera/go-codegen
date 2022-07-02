@@ -17,6 +17,8 @@ Types of changes:
 
 ## Unreleased
 
+## v0.7.1 - 2022-07-01
+
 ### Fixed
 
 - Fixed `$.AddImportType` failing on certain go types:
