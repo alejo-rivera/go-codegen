@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"runtime"
 
 	codegen "github.com/CyborgMaster/go-codegen"
 )
 
 var versionFlag = flag.Bool("v", false, "prints the version number")
+var runtimeFlag = flag.Bool("runtime", false, "prints the go runtime version number")
 
 func init() {
 	flag.Usage = func() {
@@ -28,6 +30,10 @@ func main() {
 	if *versionFlag {
 		fmt.Println(codegen.Version)
 		return
+	} else if *runtimeFlag {
+		fmt.Println(runtime.Version())
+		return
+
 	}
 
 	args := flag.Args()
