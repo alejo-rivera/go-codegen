@@ -17,7 +17,7 @@ differentiate installs of nullstyle's project vs this one.
 ## Installation
 
 ```bash
-go install github.com/CyborgMaster/go-codegen/cmd/go-codegen
+go install github.com/CyborgMaster/go-codegen/cmd/go-codegen@latest
 ```
 
 ## Example usage
