@@ -129,6 +129,24 @@ func (c *TemplateContext) AddImportType(t types.Type) (string, error) {
 				)
 			}
 		}
+	case *types.Signature:
+		p := t.Params()
+		if _, err := c.AddImportType(p); err != nil {
+			return "", errors.Wrapf(
+				err,
+				"importing params '%s' of type %T from function '%s'",
+				p, p, t.String(),
+			)
+		}
+		r := t.Results()
+		if _, err := c.AddImportType(r); err != nil {
+			return "", errors.Wrapf(
+				err,
+				"importing results '%s' of type %T from function '%s'",
+				r, r, t.String(),
+			)
+		}
+
 	case interface{ Elem() types.Type }: // Array, Slice, Pointer, Channel
 		return c.AddImportType(t.Elem())
 	case *types.Basic:
