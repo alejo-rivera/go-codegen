@@ -17,6 +17,12 @@ Types of changes:
 
 ## Unreleased
 
+### Added
+
+- Runtime flag
+  - Identify Go runtime used to build the application
+- [#5](https://github.com/CyborgMaster/go-codegen/issues/5) Support anonymous function signatures as parameters
+
 ## v0.7.1 - 2022-07-01
 
 ### Fixed
