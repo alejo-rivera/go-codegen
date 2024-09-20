@@ -88,20 +88,11 @@ func (c *TemplateContext) AddImportType(t types.Type) (string, error) {
 		for i := 0; i < t.NumExplicitMethods(); i++ {
 			m := t.ExplicitMethod(i)
 			mt := m.Type().(*types.Signature)
-			p := mt.Params()
-			if _, err := c.AddImportType(p); err != nil {
+			if _, err := c.AddImportType(mt); err != nil {
 				return "", errors.Wrapf(
 					err,
-					"importing params '%s' of type %T from interface method '%s'",
-					p, p, m.Name(),
-				)
-			}
-			r := mt.Results()
-			if _, err := c.AddImportType(r); err != nil {
-				return "", errors.Wrapf(
-					err,
-					"importing results '%s' of type %T from interface method '%s'",
-					r, r, m.Name(),
+					"importing method of type %T from interface method '%s'",
+					mt, m.Name(),
 				)
 			}
 		}
