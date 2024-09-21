@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"go/token"
 	"go/types"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 	"golang.org/x/tools/go/packages"
 )
 
-func ProcessFile(filePath string) error {
-	if !strings.HasSuffix(filePath, ".go") {
-		return errors.New(filePath + " does not reference a go file")
+func ProcessFile(filePaths ...string) error {
+	patterns := make([]string, len(filePaths), len(filePaths))
+	for i, filePath := range filePaths {
+		if !strings.HasSuffix(filePath, ".go") {
+			return errors.New(filePath + " does not reference a go file")
+		}
+		patterns[i] = fmt.Sprint("file=", filePath)
 	}
 
 	fset := token.NewFileSet()
@@ -21,35 +24,42 @@ func ProcessFile(filePath string) error {
 		Fset: fset,
 		Mode: packages.NeedName |
 			packages.NeedTypes |
-			packages.NeedDeps,
+			packages.NeedDeps |
+			packages.NeedFiles,
 	}
-	pkgs, err := packages.Load(cfg, "file="+filePath)
+
+	pkgs, err := packages.Load(cfg, patterns...)
 	if err != nil {
 		return errors.Wrap(err, "parsing file")
 	}
-	if l := len(pkgs); l != 1 {
-		return errors.New("expected only 1 package, found " + strconv.Itoa(l))
-	}
-	pkg := pkgs[0]
-	structs := findStructsInFile(filePath, pkg, fset)
 
-	ctx := NewGenContext(fset, pkg.Types)
-	for _, s := range structs {
-		if err := processStruct(s, ctx); err != nil {
-			return errors.Wrapf(err, "processing struct %s", s.Obj().Name())
+	filePathToPkg, err := generatePathToPackageMap(filePaths, pkgs)
+	if err != nil {
+		return errors.Wrapf(err, "failed to map file paths to packages")
+	}
+
+	for filePath, pkg := range filePathToPkg {
+		structs := findStructsInFile(filePath, pkg, fset)
+
+		ctx := NewGenContext(fset, pkg.Types)
+		for _, s := range structs {
+			if err := processStruct(s, ctx); err != nil {
+				return errors.Wrapf(err, "processing struct %s", s.Obj().Name())
+			}
 		}
+
+		if len(ctx.Generated()) == 0 {
+			return errors.New("No codegen tags detected in file " + filePath)
+		}
+
+		base := filePath[:len(filePath)-len(".go")]
+		genPath := base + "_generated.go"
+		if err := Output(ctx, genPath); err != nil {
+			return errors.Wrap(err, "writing generated code to "+genPath)
+		}
+		fmt.Printf("Wrote %s.\n", genPath)
 	}
 
-	if len(ctx.Generated()) == 0 {
-		return errors.New("No codegen tags detected in file " + filePath)
-	}
-
-	base := filePath[:len(filePath)-len(".go")]
-	genPath := base + "_generated.go"
-	if err := Output(ctx, genPath); err != nil {
-		return errors.Wrap(err, "writing generated code to "+genPath)
-	}
-	fmt.Printf("Wrote %s.\n", genPath)
 	return nil
 }
 
@@ -90,4 +100,21 @@ func findStructsInFile(
 		}
 	}
 	return structs
+}
+
+func generatePathToPackageMap(filePaths []string, pkgs []*packages.Package) (map[string]*packages.Package, error) {
+	filePathToPkg := make(map[string]*packages.Package, len(filePaths))
+FilePathLoop:
+	for _, filePath := range filePaths {
+		for _, pkg := range pkgs {
+			for _, pkgFile := range pkg.GoFiles {
+				if filePath == pkgFile {
+					filePathToPkg[filePath] = pkg
+					continue FilePathLoop
+				}
+			}
+		}
+		return nil, errors.New("could not find package for file, " + filePath)
+	}
+	return filePathToPkg, nil
 }
