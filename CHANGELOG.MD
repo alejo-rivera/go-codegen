@@ -19,10 +19,14 @@ Types of changes:
 
 ### Added
 
-- Runtime flag
-  - Identify Go runtime used to build the application
-- [#5](https://github.com/CyborgMaster/go-codegen/issues/5) Support anonymous function signatures as parameters
-- Support for loading packages once per run instead of once per input file
+- `--runtime` command line flag - identifies the Go runtime version used to
+  build the executable.
+- [#5](https://github.com/CyborgMaster/go-codegen/issues/5) Support anonymous
+  function signatures as parameters.
+- When passing multiple files as command line arguments, load packages once for
+  the whole execution instead of once per file, resulting in a massive speedup
+  when processing many files as loading packages is the slowest part of the
+  process.
 
 ## v0.7.1 - 2022-07-01
 
@@ -80,7 +84,7 @@ Types of changes:
 
 ### Added
 
-- `-v` command line tag that prints the version number and exits.
+- `-v` command line flag that prints the version number and exits.
 
 ## v0.3.0 - 2021-05-17
 
