@@ -17,6 +17,8 @@ Types of changes:
 
 ## Unreleased
 
+## v1.0.0 - 2024-09-23
+
 ### Added
 
 - Runtime flag

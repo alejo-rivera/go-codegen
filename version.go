@@ -1,3 +1,3 @@
 package codegen
 
-var Version = "v0.7.1"
+var Version = "v1.0.0"
