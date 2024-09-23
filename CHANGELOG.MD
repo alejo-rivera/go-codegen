@@ -19,6 +19,12 @@ Types of changes:
 
 ## v1.0.0 - 2024-09-23
 
+This is not a breaking change from the prior version (0.7.1) but rather a
+solidification of the existing API and a commitment not to break it going
+forward.  The API has been stable and is use for over 2 years, so this seems
+reasonable.  If a breaking change is necessary in the future, it will require a
+major version bump.
+
 ### Added
 
 - `--runtime` command line flag - identifies the Go runtime version used to
