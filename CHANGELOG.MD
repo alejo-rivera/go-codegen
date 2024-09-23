@@ -22,6 +22,7 @@ Types of changes:
 - Runtime flag
   - Identify Go runtime used to build the application
 - [#5](https://github.com/CyborgMaster/go-codegen/issues/5) Support anonymous function signatures as parameters
+- Support for loading packages once per run instead of once per input file
 
 ## v0.7.1 - 2022-07-01
 

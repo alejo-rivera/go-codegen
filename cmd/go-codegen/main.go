@@ -41,14 +41,15 @@ func main() {
 		log.Fatalln("expected one or more go files are arguments")
 	}
 
-	for _, arg := range args {
-		arg, err := filepath.Abs(arg)
+	filePaths := make([]string, len(args), len(args))
+	for i, arg := range args {
+		var err error
+		filePaths[i], err = filepath.Abs(arg)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		if err := codegen.ProcessFile(arg); err != nil {
-			log.Fatalln(err)
-		}
+	}
+	if err := codegen.ProcessFile(filePaths...); err != nil {
+		log.Fatalln(err)
 	}
 }
