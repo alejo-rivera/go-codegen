@@ -17,6 +17,8 @@ Types of changes:
 
 ## Unreleased
 
+## v1.0.0 - 2024-09-23
+
 ### Added
 
 - `--runtime` command line flag - identifies the Go runtime version used to
