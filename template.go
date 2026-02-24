@@ -142,6 +142,11 @@ func (c *TemplateContext) AddImportType(t types.Type) (string, error) {
 		return c.AddImportType(t.Elem())
 	case *types.Basic:
 		// No need to import
+	case *types.Alias:
+		pkg := t.Obj().Pkg()
+		if pkg != nil {
+			c.AddImport(pkg.Path())
+		}
 	default:
 		return "", errors.Errorf("couldn't add import for '%s' of type %T", t, t)
 	}
@@ -222,13 +227,12 @@ func catNoSpace(ss ...string) string {
 
 func typeName(t types.Type) string {
 	switch t := t.(type) {
-	case *types.Named:
+	case interface{ Obj() *types.TypeName }: // *types.Named, *types.Alias
 		pkg := t.Obj().Pkg()
 		if pkg != nil {
-			return t.Obj().Pkg().Name() + "." + t.Obj().Name()
-		} else {
-			return t.Obj().Name()
+			return pkg.Name() + "." + t.Obj().Name()
 		}
+		return t.Obj().Name()
 	case interface{ Elem() types.Type }:
 		return typeName(t.Elem())
 	default:
@@ -286,6 +290,8 @@ func structFromType(t types.Type) *types.Struct {
 		return t
 	case *types.Named:
 		return structFromType(t.Underlying())
+	case *types.Alias:
+		return structFromType(t.Rhs())
 	case interface{ Elem() types.Type }:
 		return structFromType(t.Elem())
 	default:
